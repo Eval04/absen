@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "552691628652",
+    "project_id": "absen-150e3",
+    "storage_bucket": "absen-150e3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:552691628652:android:74ea11317f4de128fe3649",
+        "android_client_info": {
+          "package_name": "com.example.absen_dishub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVaWC22zU9OtzPc2_WqgMlqU5TL6Nml6k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
