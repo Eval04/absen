@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // TAMBAHAN: Untuk cek database
 import 'userabsen.dart';
+import '../dashboard/admin.dart'; // TAMBAHAN: Import halaman Admin Anda
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -30,20 +32,53 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
-      );
+      // 1. Lakukan Login Auth
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
+          );
 
-      // Matikan loading sebelum pindah halaman agar tidak freeze
+      // 2. Ambil data user dari Firestore untuk cek ROLE
+      // Asumsi: Nama koleksi di database adalah 'users'
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      // Matikan loading
       setState(() => isLoading = false);
 
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const UserAbsenPage()),
-        (route) => false,
-      );
+
+      // 3. Cek Role dan Arahkan Halaman
+      if (userDoc.exists) {
+        // Ambil field 'role' dari database
+        String role = userDoc.get('role');
+
+        if (role == 'admin') {
+          // JIKA ADMIN -> Ke Dashboard Admin
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboard()),
+            (route) => false,
+          );
+        } else {
+          // JIKA INTERN / LAINNYA -> Ke Halaman Absen User
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const UserAbsenPage()),
+            (route) => false,
+          );
+        }
+      } else {
+        // Jika data user tidak ditemukan di Firestore, anggap default user biasa
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const UserAbsenPage()),
+          (route) => false,
+        );
+      }
     } on FirebaseAuthException catch (e) {
       setState(() => isLoading = false);
       String message = "Terjadi kesalahan login.";
