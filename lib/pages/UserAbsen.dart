@@ -232,7 +232,7 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
                   ),
                   child: Center(
                     child: Text(
-                      "$hariIni  $jamSekarang WIB",
+                      "$hariIni  $jamSekarang ",
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
