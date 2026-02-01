@@ -10,8 +10,8 @@ import 'firebase_options.dart';
 // Pastikan path/nama file ini sesuai dengan project Anda
 import 'pages/SplashScreen.dart';
 import 'dashboard/admin.dart';
-import 'pages/login.dart'; // File login Anda
-import 'pages/userabsen.dart'; // File halaman user/intern Anda
+import 'pages/Login.dart'; // File login Anda
+import 'pages/UserAbsen.dart'; // File halaman user/intern Anda
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

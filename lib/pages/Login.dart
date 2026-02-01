@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // TAMBAHAN: Untuk cek database
-import 'userabsen.dart';
+import 'UserAbsen.dart';
 import '../dashboard/admin.dart'; // TAMBAHAN: Import halaman Admin Anda
 
 class LoginPage extends StatefulWidget {
