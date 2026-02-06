@@ -42,6 +42,9 @@ dependencies:
   flutter_map: ^6.1.0 # Untuk Peta (Gratis, tanpa API Key Google)
   latlong2: ^0.9.0 # Koordinat peta
   url_launcher: ^6.2.2 # Untuk buka link (opsional)
+  excel: ^4.0.0 # Tambahkan ini untuk bikin file Excel
+  path_provider: ^2.1.1 # Untuk simpan file di HP/Laptop
+  open_file: ^3.3.2 # Opsional: Untuk langsung buka file setelah download
 
 dev_dependencies:
   flutter_test:

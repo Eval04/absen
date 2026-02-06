@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class AdminSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -49,9 +50,26 @@ class AdminSidebar extends StatelessWidget {
                 ),
                 const Text("Kota Makassar", style: TextStyle(color: Colors.white70, fontSize: 12)),
                 
-                const SizedBox(height: 20),
-                // Tanggal
-                const Text("19.01.2026", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+const SizedBox(height: 20),
+                // TANGGAL & WAKTU REAL-TIME
+                StreamBuilder(
+                  stream: Stream.periodic(const Duration(seconds: 1)),
+                  builder: (context, snapshot) {
+                    return Column(
+                      children: [
+                        Text(
+                          DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(DateTime.now()),
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          DateFormat('HH:mm:ss', 'id_ID').format(DateTime.now()),
+                          style: const TextStyle(color: Colors.yellow, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                      ],
+                    );
+                  },
+                ),
                 
                 const SizedBox(height: 20),
                 const CircleAvatar(
@@ -85,7 +103,7 @@ class AdminSidebar extends StatelessWidget {
               leading: const Icon(Icons.people),
               title: const Text("Fitur Pembimbing"),
               children: [
-                _buildSubItem(1, "Manajemen Magang"),
+                _buildSubItem(1, "Manajemen Peserta Magang"),
               ],
             ),
           ),
@@ -101,7 +119,7 @@ class AdminSidebar extends StatelessWidget {
               leading: const Icon(Icons.admin_panel_settings),
               title: const Text("Fitur Admin"),
               children: [
-                _buildSubItem(2, "Pengaturan Sistem"),
+                _buildSubItem(2, "Semua Fitur Admin"),
               ],
             ),
           ),

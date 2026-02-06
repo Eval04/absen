@@ -9,6 +9,9 @@ import '../widgets/dashboard_card.dart';
 // --- IMPORT FITUR ---
 import 'fitur_pembimbing/daftar_magang_widget.dart';
 import 'fitur_pembimbing/validasi_izin_widget.dart';
+// 1. IMPORT FITUR BARU DI SINI
+import 'fitur_pembimbing/lihat_kehadiran_widget.dart'; 
+
 import 'fitur_admin/form_tambah_magang.dart';
 import 'fitur_admin/jam_absen_widget.dart';
 import 'fitur_admin/map_lokasi_widget.dart';
@@ -109,12 +112,17 @@ class _AdminDashboardState extends State<AdminDashboard> {
         ],
         const Text("Manajemen Magang", style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
+        
         Wrap(
           spacing: 20,
           runSpacing: 20,
-          // PERBAIKAN: HAPUS KATA 'const' DI SINI
+          // JANGAN PAKAI CONST DI SINI
           children: const [
             DashboardCard(title: "Daftar Anak Magang", width: 350, child: DaftarMagangWidget()),
+            
+            // 2. PASANG WIDGET BARU DI SINI
+            DashboardCard(title: "Lihat Kehadiran Harian", width: 350, child: LihatKehadiranWidget()),
+            
             DashboardCard(title: "Validasi Izin & Sakit", width: 350, child: ValidasiIzinWidget()),
           ],
         ),
@@ -135,7 +143,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
         Wrap(
           spacing: 20,
           runSpacing: 20,
-          // PERBAIKAN: HAPUS KATA 'const' DI SINI
           children: const [
             DashboardCard(title: "Tambah Anak Magang", width: 320, child: FormTambahMagang()),
             DashboardCard(title: "Atur Jam Absen", width: 320, child: JamAbsenWidget()),

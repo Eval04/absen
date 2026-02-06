@@ -9,7 +9,7 @@ import 'firebase_options.dart';
 // --- IMPORT HALAMAN ANDA ---
 // Pastikan path/nama file ini sesuai dengan project Anda
 import 'pages/SplashScreen.dart';
-import 'dashboard/admin.dart';
+import 'dashboard/admin_dashboard.dart'; // <--- INI BENAR (Sesuai nama file Anda)
 import 'pages/Login.dart'; // File login Anda
 import 'pages/UserAbsen.dart'; // File halaman user/intern Anda
 
