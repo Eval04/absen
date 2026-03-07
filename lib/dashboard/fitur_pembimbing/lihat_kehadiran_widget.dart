@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-// PENTING: Gunakan 'hide Border' agar tidak bentrok dengan Border Flutter
-import 'package:excel/excel.dart' hide Border; 
+import 'package:excel/excel.dart' hide Border;
 
-// KHUSUS WEB: Kita pakai library html bawaan Dart
-import 'dart:html' as html; 
+// ✅ FIX: Conditional import — hanya load dart:html di Web, stub di Mobile
+import 'download_stub.dart'
+    if (dart.library.html) 'download_web.dart';
 
 class LihatKehadiranWidget extends StatefulWidget {
   const LihatKehadiranWidget({super.key});
@@ -15,18 +16,19 @@ class LihatKehadiranWidget extends StatefulWidget {
 }
 
 class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
-  DateTime _focusedDay = DateTime.now(); 
-  String _searchName = ""; 
+  DateTime _focusedDay = DateTime.now();
+  String _searchName = "";
   final TextEditingController _searchController = TextEditingController();
-  bool _isExporting = false; 
+  bool _isExporting = false;
 
-  int _getDaysInMonth(DateTime date) {
-    return DateTime(date.year, date.month + 1, 0).day;
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
-  int _getFirstDayOffset(DateTime date) {
-    return DateTime(date.year, date.month, 1).weekday;
-  }
+  int _getDaysInMonth(DateTime date) => DateTime(date.year, date.month + 1, 0).day;
+  int _getFirstDayOffset(DateTime date) => DateTime(date.year, date.month, 1).weekday;
 
   void _changeMonth(int offset) {
     setState(() {
@@ -34,88 +36,76 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
     });
   }
 
-  // --- FITUR EXPORT EXCEL (KHUSUS WEB) ---
-  Future<void> _exportToExcel() async {
-    setState(() => _isExporting = true);
+  // ✅ FIX: Export Excel dengan query yang benar (pakai field 'bulan' & 'tahun')
+  Future<void> _exportToExcel({bool perUser = false}) async {
+    if (!kIsWeb) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Export Excel hanya tersedia di Web.")),
+      );
+      return;
+    }
 
+    setState(() => _isExporting = true);
     try {
-      // 1. Ambil Data
+      // ✅ Query pakai field 'bulan' & 'tahun' yang sekarang sudah disimpan
       QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('absensi')
           .where('bulan', isEqualTo: _focusedDay.month)
           .where('tahun', isEqualTo: _focusedDay.year)
           .get();
 
-      // 2. Siapkan Excel
-      var excel = Excel.createExcel();
-      Sheet sheet = excel['Rekap Absensi'];
-      excel.delete('Sheet1');
+      var excelFile = Excel.createExcel();
+      Sheet sheet = excelFile['Rekap Absensi'];
+      excelFile.delete('Sheet1');
 
       // Header
-      CellStyle headerStyle = CellStyle(
-        bold: true, 
-        horizontalAlign: HorizontalAlign.Center,
-        backgroundColorHex: ExcelColor.blueGrey200
-      );
-
       sheet.appendRow([
         TextCellValue('No'),
-        TextCellValue('Nama Magang'),
+        TextCellValue('Nama'),
+        TextCellValue('Asal Kampus'),
         TextCellValue('Tanggal'),
-        TextCellValue('Waktu Absen'),
-        TextCellValue('Status'),
+        TextCellValue('Jam'),
+        TextCellValue('Keterangan'),
       ]);
 
-      // 3. Masukkan Data
-      int no = 1;
+      // Sortir & filter
       List<QueryDocumentSnapshot> docs = snapshot.docs;
-      
-      // Sortir data berdasarkan waktu
+      if (_searchName.isNotEmpty) {
+        docs = docs.where((d) {
+          String nama = (d['nama'] ?? '').toString().toLowerCase();
+          return nama.contains(_searchName.toLowerCase());
+        }).toList();
+      }
       docs.sort((a, b) {
-        Timestamp tA = a['created_at'];
-        Timestamp tB = b['created_at'];
-        return tA.compareTo(tB);
+        try {
+          Timestamp tA = a['timestamp'];
+          Timestamp tB = b['timestamp'];
+          return tA.compareTo(tB);
+        } catch (_) {
+          return 0;
+        }
       });
 
+      int no = 1;
       for (var doc in docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-
-        // Filter Nama
-        if (_searchName.isNotEmpty) {
-          String namaUser = (data['nama'] ?? '').toString().toLowerCase();
-          if (!namaUser.contains(_searchName.toLowerCase())) continue;
-        }
-
-        DateTime tgl = (data['created_at'] as Timestamp).toDate();
-        String tanggalStr = DateFormat('dd MMMM yyyy', 'id_ID').format(tgl);
-        String jamStr = DateFormat('HH:mm').format(tgl);
-
         sheet.appendRow([
           IntCellValue(no++),
           TextCellValue(data['nama'] ?? '-'),
-          TextCellValue(tanggalStr),
-          TextCellValue(jamStr),
-          TextCellValue('Hadir'),
+          TextCellValue(data['univ'] ?? '-'),
+          TextCellValue(data['tanggal'] ?? '-'),
+          TextCellValue(data['jam'] ?? '-'),
+          TextCellValue(data['tipe'] ?? '-'),
         ]);
       }
 
-      // 4. SIMPAN FILE (LOGIKA WEB DOWNLOAD)
-      var fileBytes = excel.save();
-
+      var fileBytes = excelFile.save();
       if (fileBytes != null) {
-        // Buat BLOB (Binary Large Object) untuk browser
-        final blob = html.Blob([fileBytes]);
-        
-        // Buat URL sementara
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        
-        // Buat elemen <a> palsu untuk memicu download
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute("download", "Rekap_Absensi_${DateFormat('MMMM_yyyy', 'id_ID').format(_focusedDay)}.xlsx")
-          ..click(); // Klik otomatis
-          
-        // Bersihkan URL agar hemat memori
-        html.Url.revokeObjectUrl(url);
+        // ✅ FITUR #8: Nama file berbeda jika export per-user
+        String fileName = perUser && _searchName.isNotEmpty
+            ? "Rekap_${_searchName}_${DateFormat('MMMM_yyyy', 'id_ID').format(_focusedDay)}.xlsx"
+            : "Rekap_Absensi_${DateFormat('MMMM_yyyy', 'id_ID').format(_focusedDay)}.xlsx";
+        downloadFile(fileBytes, fileName);
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -126,7 +116,6 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
           );
         }
       }
-
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,8 +130,8 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
   @override
   Widget build(BuildContext context) {
     int totalDays = _getDaysInMonth(_focusedDay);
-    int firstDayOffset = _getFirstDayOffset(_focusedDay); 
-    int gridOffset = firstDayOffset - 1; 
+    int firstDayOffset = _getFirstDayOffset(_focusedDay);
+    int gridOffset = firstDayOffset - 1;
 
     return Column(
       children: [
@@ -173,7 +162,7 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
             ),
           ],
         ),
-        
+
         const SizedBox(height: 10),
 
         // HEADER BULAN & TOMBOL DOWNLOAD
@@ -181,41 +170,54 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             IconButton(
-              icon: const Icon(Icons.chevron_left, size: 20), 
+              icon: const Icon(Icons.chevron_left, size: 20),
               onPressed: () => _changeMonth(-1),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
-            
             Text(
-              DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay), 
+              DateFormat('MMMM yyyy', 'id_ID').format(_focusedDay),
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
-
             IconButton(
-              icon: const Icon(Icons.chevron_right, size: 20), 
+              icon: const Icon(Icons.chevron_right, size: 20),
               onPressed: () => _changeMonth(1),
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
             ),
-
             const Spacer(),
-
-            // TOMBOL DOWNLOAD EXCEL
             SizedBox(
               height: 30,
               child: ElevatedButton.icon(
                 onPressed: _isExporting ? null : _exportToExcel,
-                icon: _isExporting 
-                  ? const SizedBox(width: 10, height: 10, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Icon(Icons.download, size: 14, color: Colors.white),
+                icon: _isExporting
+                    ? const SizedBox(
+                        width: 10, height: 10,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Icon(Icons.download, size: 14, color: Colors.white),
                 label: const Text("Rekap", style: TextStyle(fontSize: 11, color: Colors.white)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700], 
+                  backgroundColor: Colors.green[700],
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                 ),
               ),
-            )
+            ),
+            // ✅ FITUR #8: Export per-user (hanya tampil jika ada filter nama)
+            if (_searchName.isNotEmpty) ...[
+              const SizedBox(width: 6),
+              SizedBox(
+                height: 30,
+                child: ElevatedButton.icon(
+                  onPressed: _isExporting ? null : () => _exportToExcel(perUser: true),
+                  icon: const Icon(Icons.person, size: 12, color: Colors.white),
+                  label: const Text("Per-User", style: TextStyle(fontSize: 11, color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[700],
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
 
@@ -226,12 +228,11 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: ["Sn", "Sl", "Rb", "Km", "Jm", "Sb", "Mg"]
               .map((day) => SizedBox(
-                    width: 30, 
-                    child: Text(
-                      day, 
-                      textAlign: TextAlign.center, 
-                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)
-                    )
+                    width: 30,
+                    child: Text(day,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
                   ))
               .toList(),
         ),
@@ -241,6 +242,7 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
         // GRID KALENDER
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
+            // ✅ FIX: Query pakai field 'bulan' & 'tahun' yang benar
             stream: FirebaseFirestore.instance
                 .collection('absensi')
                 .where('bulan', isEqualTo: _focusedDay.month)
@@ -248,19 +250,20 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
                 .snapshots(),
             builder: (context, snapshot) {
               Set<int> hadirDates = {};
-              
               if (snapshot.hasData) {
                 for (var doc in snapshot.data!.docs) {
                   var data = doc.data() as Map<String, dynamic>;
-                  
                   if (_searchName.isNotEmpty) {
                     String namaUser = (data['nama'] ?? '').toString().toLowerCase();
                     if (!namaUser.contains(_searchName.toLowerCase())) continue;
                   }
-                  
-                  if (data['created_at'] != null) {
-                     DateTime tgl = (data['created_at'] as Timestamp).toDate();
-                     hadirDates.add(tgl.day); 
+                  // ✅ FIX: Baca dari field 'tanggal' string, ambil hari-nya
+                  String? tanggalStr = data['tanggal'];
+                  if (tanggalStr != null) {
+                    try {
+                      DateTime tgl = DateTime.parse(tanggalStr);
+                      hadirDates.add(tgl.day);
+                    } catch (_) {}
                   }
                 }
               }
@@ -268,26 +271,26 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
               return GridView.builder(
                 padding: EdgeInsets.zero,
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7, 
+                  crossAxisCount: 7,
                   mainAxisSpacing: 5,
                   crossAxisSpacing: 5,
                 ),
                 itemCount: totalDays + gridOffset,
                 itemBuilder: (context, index) {
                   if (index < gridOffset) return const SizedBox();
-
                   int day = index - gridOffset + 1;
                   bool isHadir = hadirDates.contains(day);
-                  bool isToday = day == DateTime.now().day && 
-                                 _focusedDay.month == DateTime.now().month && 
-                                 _focusedDay.year == DateTime.now().year;
+                  bool isToday = day == DateTime.now().day &&
+                      _focusedDay.month == DateTime.now().month &&
+                      _focusedDay.year == DateTime.now().year;
 
                   return Container(
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: isHadir ? const Color(0xFF0B5FA5) : (isToday ? Colors.blue[100] : Colors.transparent),
+                      color: isHadir
+                          ? const Color(0xFF0B5FA5)
+                          : (isToday ? Colors.blue[100] : Colors.transparent),
                       borderRadius: BorderRadius.circular(4),
-                      // Aman karena kita sudah 'hide Border' dari excel
                       border: isToday ? Border.all(color: Colors.blue) : null,
                     ),
                     child: Text(
@@ -295,7 +298,7 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
                       style: TextStyle(
                         color: isHadir ? Colors.white : Colors.black87,
                         fontSize: 11,
-                        fontWeight: isHadir ? FontWeight.bold : FontWeight.normal
+                        fontWeight: isHadir ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                   );
@@ -304,9 +307,10 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
             },
           ),
         ),
-        
-        // LEGENDA
+
         const SizedBox(height: 5),
+
+        // LEGENDA
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -314,11 +318,15 @@ class _LihatKehadiranWidgetState extends State<LihatKehadiranWidget> {
             const SizedBox(width: 5),
             const Text("Hadir", style: TextStyle(fontSize: 10)),
             const SizedBox(width: 15),
-            Container(width: 10, height: 10, decoration: BoxDecoration(border: Border.all(color: Colors.blue), color: Colors.blue[100])),
+            Container(
+              width: 10, height: 10,
+              decoration: BoxDecoration(
+                  border: Border.all(color: Colors.blue), color: Colors.blue[100]),
+            ),
             const SizedBox(width: 5),
             const Text("Hari Ini", style: TextStyle(fontSize: 10)),
           ],
-        )
+        ),
       ],
     );
   }

@@ -15,6 +15,7 @@ import 'fitur_pembimbing/lihat_kehadiran_widget.dart';
 import 'fitur_admin/form_tambah_magang.dart';
 import 'fitur_admin/jam_absen_widget.dart';
 import 'fitur_admin/map_lokasi_widget.dart';
+import 'fitur_admin/reset_password_widget.dart'; // ✅ FITUR #7
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -147,6 +148,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             DashboardCard(title: "Tambah Anak Magang", width: 320, child: FormTambahMagang()),
             DashboardCard(title: "Atur Jam Absen", width: 320, child: JamAbsenWidget()),
             DashboardCard(title: "Atur Lokasi Kantor", width: 320, child: MapLokasiWidget()),
+            DashboardCard(title: "Reset Password User", width: 320, child: ResetPasswordWidget()), // ✅ FITUR #7
           ],
         ),
       ],
