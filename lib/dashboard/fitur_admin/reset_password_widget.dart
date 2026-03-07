@@ -117,20 +117,32 @@ class _ResetPasswordWidgetState extends State<ResetPasswordWidget> {
         // List user
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
+            // ✅ FIX: Query semua users, filter di client
             stream: FirebaseFirestore.instance
                 .collection('users')
-                .where('role', isEqualTo: 'intern')
-                .where('status', isNotEqualTo: 'deleted')
                 .snapshots(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-              if (snapshot.data!.docs.isEmpty) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text("Error: ${snapshot.error}",
+                      style: const TextStyle(fontSize: 11, color: Colors.red)),
+                );
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return const Center(child: Text("Belum ada data magang", style: TextStyle(fontSize: 11)));
               }
 
+              // Filter non-admin, non-deleted + search
               var docs = snapshot.data!.docs.where((doc) {
-                if (_searchQuery.isEmpty) return true;
                 var d = doc.data() as Map<String, dynamic>;
+                String role = (d['role'] ?? '').toLowerCase();
+                String status = (d['status'] ?? '').toLowerCase();
+                if (role == 'admin') return false;
+                if (status == 'deleted') return false;
+                if (_searchQuery.isEmpty) return true;
                 return (d['nama'] ?? '').toLowerCase().contains(_searchQuery) ||
                     (d['nip'] ?? '').toLowerCase().contains(_searchQuery);
               }).toList();

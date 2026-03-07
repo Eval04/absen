@@ -215,14 +215,28 @@ class _DaftarMagangWidgetState extends State<DaftarMagangWidget> {
         // Data dari Firestore
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
+            // ✅ FIX: Query semua users, filter role 'intern' di client
+            // (mencegah masalah jika ada variasi nilai role di Firestore lama)
             stream: FirebaseFirestore.instance
                 .collection('users')
-                .where('role', isEqualTo: 'intern')
-                .where('status', isNotEqualTo: 'deleted')
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 32),
+                      const SizedBox(height: 8),
+                      Text("Error: ${snapshot.error}",
+                          style: const TextStyle(fontSize: 10, color: Colors.red),
+                          textAlign: TextAlign.center),
+                    ],
+                  ),
+                );
               }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return const Center(
@@ -230,10 +244,17 @@ class _DaftarMagangWidgetState extends State<DaftarMagangWidget> {
                 );
               }
 
-              // ✅ Filter berdasarkan search query
+              // ✅ Filter: tampilkan semua role non-admin, non-deleted
+              // Toleran terhadap variasi nilai role ('intern', 'user', 'Intern', dll)
               var docs = snapshot.data!.docs.where((doc) {
-                if (_searchQuery.isEmpty) return true;
                 var data = doc.data() as Map<String, dynamic>;
+                String role = (data['role'] ?? '').toLowerCase();
+                String status = (data['status'] ?? '').toLowerCase();
+                // Sembunyikan admin dan akun deleted
+                if (role == 'admin') return false;
+                if (status == 'deleted') return false;
+                // Filter search
+                if (_searchQuery.isEmpty) return true;
                 String nama = (data['nama'] ?? '').toLowerCase();
                 String nip = (data['nip'] ?? '').toLowerCase();
                 String univ = (data['univ'] ?? '').toLowerCase();

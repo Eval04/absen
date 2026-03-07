@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Untuk Auth
-import 'package:cloud_firestore/cloud_firestore.dart'; // Untuk Cek Database
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_localizations/flutter_localizations.dart'; // ✅ TAMBAH INI
 import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 
-// --- IMPORT HALAMAN ANDA ---
-// Pastikan path/nama file ini sesuai dengan project Anda
 import 'pages/SplashScreen.dart';
-import 'dashboard/admin_dashboard.dart'; // <--- INI BENAR (Sesuai nama file Anda)
-import 'pages/Login.dart'; // File login Anda
-import 'pages/UserAbsen.dart'; // File halaman user/intern Anda
+import 'dashboard/admin_dashboard.dart';
+import 'pages/Login.dart';
+import 'pages/UserAbsen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,14 +37,24 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Absensi Dishub Makassar',
+
+      // ✅ WAJIB — tanpa ini showDatePicker/showTimePicker crash di Android
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('id', 'ID'), // Bahasa Indonesia
+        Locale('en', 'US'), // Fallback English
+      ],
+      locale: const Locale('id', 'ID'),
+
       theme: ThemeData(
         primarySwatch: Colors.blue,
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0B5FA5)),
       ),
-      // LOGIKA NAVIGASI UTAMA:
-      // Jika Web -> Masuk ke Pengecekan Auth (WebAuthGate)
-      // Jika Mobile -> Masuk ke SplashScreen dulu (untuk estetika)
       home: kIsWeb ? const WebAuthGate() : const SplashScreen(),
     );
   }
@@ -116,14 +125,22 @@ class RoleCheck extends StatelessWidget {
 
         // Jika data ditemukan
         if (snapshot.hasData && snapshot.data!.exists) {
-          // Ambil field 'role'
-          // Menggunakan data() as Map untuk keamanan akses
           Map<String, dynamic>? data =
               snapshot.data!.data() as Map<String, dynamic>?;
-          String role =
-              data?['role'] ?? 'intern'; // Default ke intern jika null
 
-          // LOGIKA PEMBAGIAN HALAMAN
+          // ✅ PENTING: Jika akun dinonaktifkan saat user sedang login,
+          // logout otomatis dan arahkan ke halaman Login
+          String status = data?['status'] ?? 'active';
+          if (status == 'deleted') {
+            // Logout async tanpa await di dalam build — pakai addPostFrameCallback
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              FirebaseAuth.instance.signOut();
+            });
+            return const LoginPage();
+          }
+
+          String role = data?['role'] ?? 'intern';
+
           if (role == 'admin') {
             return const AdminDashboard();
           } else {

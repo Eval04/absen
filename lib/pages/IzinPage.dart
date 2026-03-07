@@ -33,7 +33,6 @@ class _IzinPageState extends State<IzinPage> {
       initialDate: _tanggalDipilih,
       firstDate: DateTime.now().subtract(const Duration(days: 7)),
       lastDate: DateTime.now().add(const Duration(days: 30)),
-      locale: const Locale('id', 'ID'),
     );
     if (picked != null) {
       setState(() => _tanggalDipilih = picked);
@@ -130,14 +129,17 @@ class _IzinPageState extends State<IzinPage> {
                   // JENIS IZIN
                   const Text("Jenis Izin", style: TextStyle(fontSize: 13, color: Colors.black54)),
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      _buildJenisChip("Izin", Icons.event_busy),
-                      const SizedBox(width: 10),
-                      _buildJenisChip("Sakit", Icons.local_hospital),
-                      const SizedBox(width: 10),
-                      _buildJenisChip("Keperluan Lain", Icons.more_horiz),
-                    ],
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildJenisChip("Izin", Icons.event_busy),
+                        const SizedBox(width: 10),
+                        _buildJenisChip("Sakit", Icons.local_hospital),
+                        const SizedBox(width: 10),
+                        _buildJenisChip("Keperluan Lain", Icons.more_horiz),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -212,18 +214,36 @@ class _IzinPageState extends State<IzinPage> {
             const Text("Riwayat Pengajuan",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
+            // ✅ FIX: Hapus orderBy('created_at') — sort di client, tidak butuh index
             StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('izin')
                   .where('uid', isEqualTo: widget.uid)
-                  .orderBy('created_at', descending: true)
-                  .limit(10)
+                  .limit(20)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
                 }
-                if (snapshot.data!.docs.isEmpty) {
+                if (snapshot.hasError) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text("Error: ${snapshot.error}",
+                          style: const TextStyle(color: Colors.red, fontSize: 12)),
+                    ),
+                  );
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
@@ -231,18 +251,35 @@ class _IzinPageState extends State<IzinPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Center(
-                      child: Text("Belum ada pengajuan izin.",
-                          style: TextStyle(color: Colors.black54)),
+                      child: Column(
+                        children: [
+                          Icon(Icons.inbox, size: 36, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text("Belum ada pengajuan izin.",
+                              style: TextStyle(color: Colors.black54)),
+                        ],
+                      ),
                     ),
                   );
                 }
+
+                // Sort terbaru di sisi client
+                var docs = snapshot.data!.docs.toList()
+                  ..sort((a, b) {
+                    var dA = a.data() as Map<String, dynamic>;
+                    var dB = b.data() as Map<String, dynamic>;
+                    String tanggalA = dA['tanggal'] ?? '';
+                    String tanggalB = dB['tanggal'] ?? '';
+                    return tanggalB.compareTo(tanggalA);
+                  });
+
                 return ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: snapshot.data!.docs.length,
+                  itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    var data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                    var data = docs[index].data() as Map<String, dynamic>;
                     return _buildRiwayatCard(data);
                   },
                 );

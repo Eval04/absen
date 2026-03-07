@@ -150,65 +150,66 @@ class _JamAbsenWidgetState extends State<JamAbsenWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Info
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade50,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.shade200),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.info_outline, size: 14, color: Colors.blue),
-              SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  "Anak magang hanya bisa absen dalam rentang jam ini.",
-                  style: TextStyle(fontSize: 10, color: Colors.blue),
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Info
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, size: 14, color: Colors.blue),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    "Anak magang hanya bisa absen dalam rentang jam ini.",
+                    style: TextStyle(fontSize: 10, color: Colors.blue),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-
-        _buildJamPicker("Jam Masuk (Start)", _jamMasuk, true),
-        const SizedBox(height: 12),
-        _buildJamPicker("Jam Pulang (End)", _jamPulang, false),
-
-        const SizedBox(height: 8),
-        // Durasi kerja
-        Center(
-          child: Text(
-            "Durasi kerja: ${((_jamPulang.hour * 60 + _jamPulang.minute) - (_jamMasuk.hour * 60 + _jamMasuk.minute)) ~/ 60} jam ${((_jamPulang.hour * 60 + _jamPulang.minute) - (_jamMasuk.hour * 60 + _jamMasuk.minute)) % 60} menit",
-            style: const TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-        ),
-
-        const Spacer(),
-        SizedBox(
-          width: double.infinity,
-          height: 42,
-          child: ElevatedButton.icon(
-            onPressed: _isLoading ? null : _simpanJam,
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 14, height: 14,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                  )
-                : const Icon(Icons.save, size: 16, color: Colors.white),
-            label: const Text("SIMPAN JAM", style: TextStyle(color: Colors.white)),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ],
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 14),
+
+          _buildJamPicker("Jam Masuk (Start)", _jamMasuk, true),
+          const SizedBox(height: 12),
+          _buildJamPicker("Jam Pulang (End)", _jamPulang, false),
+
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              "Durasi: ${((_jamPulang.hour * 60 + _jamPulang.minute) - (_jamMasuk.hour * 60 + _jamMasuk.minute)) ~/ 60} jam ${((_jamPulang.hour * 60 + _jamPulang.minute) - (_jamMasuk.hour * 60 + _jamMasuk.minute)) % 60} menit",
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _simpanJam,
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 14, height: 14,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save, size: 16, color: Colors.white),
+              label: const Text("SIMPAN JAM", style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

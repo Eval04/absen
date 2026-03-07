@@ -46,25 +46,31 @@ class _LoginPageState extends State<LoginPage> {
           .doc(userCredential.user!.uid)
           .get();
 
-      // Matikan loading
-      setState(() => isLoading = false);
-
+      // Matikan loading — cek mounted dulu sebelum setState
       if (!mounted) return;
+      setState(() => isLoading = false);
 
       // 3. Cek Role dan Arahkan Halaman
       if (userDoc.exists) {
-        // Ambil field 'role' dari database
-        String role = userDoc.get('role');
+        Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+        String role = userData['role'] ?? 'intern';
 
+        String status = userData['status'] ?? 'active';
+        if (status == 'deleted') {
+          await FirebaseAuth.instance.signOut();
+          if (!mounted) return;
+          _showSnackbar("Akun Anda telah dinonaktifkan. Hubungi admin.", Colors.red);
+          return;
+        }
+
+        if (!mounted) return;
         if (role == 'admin') {
-          // JIKA ADMIN -> Ke Dashboard Admin
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const AdminDashboard()),
             (route) => false,
           );
         } else {
-          // JIKA INTERN / LAINNYA -> Ke Halaman Absen User
           Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const UserAbsenPage()),
@@ -72,22 +78,23 @@ class _LoginPageState extends State<LoginPage> {
           );
         }
       } else {
-        // Jika data user tidak ditemukan di Firestore, anggap default user biasa
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const UserAbsenPage()),
-          (route) => false,
-        );
+        await FirebaseAuth.instance.signOut();
+        if (!mounted) return;
+        _showSnackbar("Akun tidak ditemukan. Hubungi admin.", Colors.red);
       }
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
       String message = "Terjadi kesalahan login.";
       if (e.code == 'user-not-found')
         message = "Email tidak terdaftar.";
       else if (e.code == 'wrong-password')
         message = "Password salah.";
+      else if (e.code == 'invalid-credential')
+        message = "Email atau password salah.";
       _showSnackbar(message, Colors.redAccent);
     } catch (e) {
+      if (!mounted) return;
       setState(() => isLoading = false);
       _showSnackbar("Error: ${e.toString()}", Colors.red);
     }

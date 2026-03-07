@@ -190,7 +190,7 @@ class _FormTambahMagangState extends State<FormTambahMagang> {
             ),
           ),
         ),
-        const Spacer(),
+        const SizedBox(height: 20),
         SizedBox(
           width: double.infinity,
           height: 45,

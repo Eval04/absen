@@ -10,7 +10,7 @@ class ValidasiIzinWidget extends StatelessWidget {
         .doc(docId)
         .update({
       'status': status,
-      'sudah_dibaca': false, // ✅ FITUR #6: trigger notif ke user
+      'sudah_dibaca': false,
       'diproses_at': FieldValue.serverTimestamp(),
     });
   }
@@ -43,25 +43,28 @@ class ValidasiIzinWidget extends StatelessWidget {
         ],
       ),
     );
-
-    if (konfirmasi == true) {
-      await _updateStatus(docId, status);
-    }
+    if (konfirmasi == true) await _updateStatus(docId, status);
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
+      // ✅ FIX: Hapus orderBy — tidak perlu index composite
       stream: FirebaseFirestore.instance
           .collection('izin')
           .where('status', isEqualTo: 'pending')
-          .orderBy('created_at', descending: false)
           .snapshots(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snapshot.data!.docs.isEmpty) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text("Error: ${snapshot.error}",
+                style: const TextStyle(fontSize: 11, color: Colors.red)),
+          );
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -75,18 +78,27 @@ class ValidasiIzinWidget extends StatelessWidget {
           );
         }
 
+        // ✅ Urutkan di sisi client — tidak perlu index Firestore
+        var docs = snapshot.data!.docs.toList()
+          ..sort((a, b) {
+            var tA = a.data() as Map<String, dynamic>;
+            var tB = b.data() as Map<String, dynamic>;
+            String tanggalA = tA['tanggal'] ?? '';
+            String tanggalB = tB['tanggal'] ?? '';
+            return tanggalA.compareTo(tanggalB);
+          });
+
         return ListView.separated(
-          itemCount: snapshot.data!.docs.length,
+          itemCount: docs.length,
           separatorBuilder: (_, __) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
-            var doc = snapshot.data!.docs[index];
+            var doc = docs[index];
             var data = doc.data() as Map<String, dynamic>;
             String nama = data['nama'] ?? 'User';
             String jenis = data['jenis'] ?? 'Izin';
             String tanggal = data['tanggal'] ?? '-';
             String alasan = data['alasan'] ?? '-';
 
-            // Warna berdasarkan jenis izin
             Color jenisColor;
             IconData jenisIcon;
             switch (jenis) {
@@ -113,7 +125,6 @@ class ValidasiIzinWidget extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // BARIS INFO
                   Row(
                     children: [
                       Icon(jenisIcon, size: 14, color: jenisColor),
@@ -125,8 +136,7 @@ class ValidasiIzinWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(jenis,
-                            style: TextStyle(
-                                fontSize: 10, color: jenisColor, fontWeight: FontWeight.bold)),
+                            style: TextStyle(fontSize: 10, color: jenisColor, fontWeight: FontWeight.bold)),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -139,28 +149,22 @@ class ValidasiIzinWidget extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text("📅 $tanggal", style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   const SizedBox(height: 2),
-                  Text(
-                    alasan,
-                    style: const TextStyle(fontSize: 10, color: Colors.black87),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(alasan,
+                      style: const TextStyle(fontSize: 10, color: Colors.black87),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
-
-                  // TOMBOL AKSI
                   Row(
                     children: [
                       Expanded(
                         child: SizedBox(
                           height: 28,
                           child: ElevatedButton(
-                            onPressed: () =>
-                                _konfirmasiAksi(context, doc.id, 'approved', nama),
+                            onPressed: () => _konfirmasiAksi(context, doc.id, 'approved', nama),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                               padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                             ),
                             child: const Text("✓ Setujui",
                                 style: TextStyle(fontSize: 10, color: Colors.white)),
@@ -172,13 +176,11 @@ class ValidasiIzinWidget extends StatelessWidget {
                         child: SizedBox(
                           height: 28,
                           child: ElevatedButton(
-                            onPressed: () =>
-                                _konfirmasiAksi(context, doc.id, 'rejected', nama),
+                            onPressed: () => _konfirmasiAksi(context, doc.id, 'rejected', nama),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                               padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(6)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                             ),
                             child: const Text("✗ Tolak",
                                 style: TextStyle(fontSize: 10, color: Colors.white)),

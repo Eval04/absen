@@ -235,20 +235,21 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
     String jamSekarang = DateFormat('HH:mm').format(DateTime.now());
 
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: const Color(0xFFF4F6FA),
       appBar: AppBar(
         backgroundColor: darkBlue,
         elevation: 0,
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Image.asset('assets/Logo_no_bg.png'),
+          child: Image.asset('assets/Logo_no_bg.png',
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.directions_bus, color: Colors.yellow)),
         ),
         title: const Text(
           'SIMAGANG Dishub',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
         ),
         actions: [
-          // ✅ FITUR #9: Tombol halaman profil
           IconButton(
             icon: const Icon(Icons.person_outline, color: Colors.white),
             onPressed: () => Navigator.push(
@@ -274,71 +275,107 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
           return SingleChildScrollView(
             child: Column(
               children: [
-                // HEADER INFO USER
+                // ═══ HERO HEADER — gradient dengan info user + tanggal ═══
                 Container(
                   width: double.infinity,
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [darkBlue, primaryBlue],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Selamat Datang, ${userData['nama'] ?? 'Pegawai'}",
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      // Tanggal & jam
+                      Row(
+                        children: [
+                          const Icon(Icons.calendar_today, color: Colors.white70, size: 13),
+                          const SizedBox(width: 6),
+                          Text(
+                            hariIni,
+                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 6),
-                      Text("NIP : ${userData['nip'] ?? '-'}",
-                          style: const TextStyle(fontSize: 14, color: Colors.black54)),
-                      const SizedBox(height: 4),
-                      Text("Asal Kampus : ${userData['univ'] ?? '-'}",
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 2),
+                      Text(
+                        jamSekarang,
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      // Info user
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 22,
+                            backgroundColor: Colors.white24,
+                            child: Text(
+                              (userData['nama'] ?? 'U').substring(0, 1).toUpperCase(),
+                              style: const TextStyle(
+                                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  userData['nama'] ?? 'Pegawai',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  "${userData['univ'] ?? '-'}  •  NIP: ${userData['nip'] ?? '-'}",
+                                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
 
-                // ✅ FITUR #6: BANNER NOTIFIKASI STATUS IZIN
+                // ═══ NOTIFIKASI IZIN ═══
                 _buildNotifIzin(),
 
-                // BANNER TANGGAL
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.all(16),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: primaryBlue,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Center(
-                    child: Text(
-                      "$hariIni  $jamSekarang",
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 16),
 
-                // KARTU STATUS DINAMIS
+                // ═══ KARTU STATUS ═══
                 _buildStatusCard(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // TOMBOL ABSEN DINAMIS
+                // ═══ TOMBOL ABSEN ═══
                 _buildTombolAbsen(),
                 const SizedBox(height: 12),
 
-                // TOMBOL AJUKAN IZIN
+                // ═══ TOMBOL IZIN ═══
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 45,
+                    height: 48,
                     child: OutlinedButton.icon(
-                      icon: Icon(Icons.assignment_outlined, color: accentOrange),
+                      icon: Icon(Icons.assignment_outlined, color: accentOrange, size: 20),
                       label: Text(
                         "Ajukan Izin / Sakit",
-                        style: TextStyle(fontWeight: FontWeight.bold, color: accentOrange),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, color: accentOrange, fontSize: 15),
                       ),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: accentOrange),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        side: BorderSide(color: accentOrange, width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        backgroundColor: Colors.orange.withOpacity(0.04),
                       ),
                       onPressed: () => Navigator.push(
                         context,
@@ -354,8 +391,10 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
                 ),
 
                 const SizedBox(height: 20),
+
+                // ═══ RIWAYAT ABSEN ═══
                 _buildRiwayatSection(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
               ],
             ),
           );
@@ -369,21 +408,30 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3E0),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentOrange.withOpacity(0.5)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 10, offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         children: [
+          // Header kartu
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: accentOrange,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+              color: accentOrange.withOpacity(0.1),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
             ),
-            child: const Text("Status Kehadiran Hari Ini:",
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Row(
+              children: [
+                Icon(Icons.today, size: 16, color: accentOrange),
+                const SizedBox(width: 6),
+                Text("Status Kehadiran Hari Ini",
+                    style: TextStyle(color: accentOrange, fontWeight: FontWeight.bold, fontSize: 13)),
+              ],
+            ),
           ),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
@@ -394,7 +442,7 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Padding(
-                  padding: EdgeInsets.all(16),
+                  padding: EdgeInsets.all(20),
                   child: Center(child: CircularProgressIndicator()),
                 );
               }
@@ -412,36 +460,45 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
               IconData statusIcon;
 
               if (sudahPulang) {
-                statusTeks = "Selesai";
+                statusTeks = "Selesai Hari Ini";
                 subTeks = "Masuk: $jamMasuk  |  Pulang: $jamPulang";
                 statusColor = Colors.green;
-                statusIcon = Icons.check_circle;
+                statusIcon = Icons.check_circle_rounded;
               } else if (sudahMasuk) {
-                statusTeks = "Sudah Absen Masuk";
-                subTeks = "Jam masuk: $jamMasuk — Jangan lupa absen pulang!";
+                statusTeks = "Sedang Bekerja";
+                subTeks = "Masuk: $jamMasuk  —  Jangan lupa absen pulang!";
                 statusColor = Colors.blue;
-                statusIcon = Icons.access_time;
+                statusIcon = Icons.work_rounded;
               } else {
                 statusTeks = "Belum Absen";
-                subTeks = "Anda belum melakukan absen masuk.";
+                subTeks = "Anda belum melakukan absen masuk hari ini.";
                 statusColor = Colors.orange;
-                statusIcon = Icons.warning_amber;
+                statusIcon = Icons.pending_rounded;
               }
 
               return Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(statusIcon, color: statusColor, size: 32),
-                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(statusIcon, color: statusColor, size: 30),
+                    ),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(statusTeks,
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: statusColor)),
-                          const SizedBox(height: 4),
-                          Text(subTeks, style: const TextStyle(color: Colors.black54)),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16, color: statusColor)),
+                          const SizedBox(height: 3),
+                          Text(subTeks,
+                              style: const TextStyle(color: Colors.black54, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -454,7 +511,6 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
       ),
     );
   }
-
   Widget _buildTombolAbsen() {
     String today = DateFormat('yyyy-MM-dd').format(DateTime.now());
     return StreamBuilder<QuerySnapshot>(
@@ -474,51 +530,69 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Column(
             children: [
+              // TOMBOL MASUK
               SizedBox(
                 width: double.infinity,
-                height: 45,
+                height: 54,
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.login, color: Colors.white),
+                  icon: Icon(
+                    sudahMasuk ? Icons.check_circle : Icons.login,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                   label: Text(
                     sudahMasuk ? "Sudah Absen Masuk ✓" : "Absen Masuk",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   onPressed: (isLoading || sudahMasuk) ? null : () => submitAbsen("Masuk"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: sudahMasuk ? Colors.grey : darkBlue,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    backgroundColor: sudahMasuk ? Colors.grey[400] : darkBlue,
+                    elevation: sudahMasuk ? 0 : 3,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
+              // TOMBOL PULANG
               SizedBox(
                 width: double.infinity,
-                height: 45,
+                height: 54,
                 child: ElevatedButton.icon(
-                  icon: Icon(Icons.logout,
-                      color: (sudahPulang || !sudahMasuk) ? Colors.grey : Colors.black87),
+                  icon: Icon(
+                    sudahPulang ? Icons.check_circle : Icons.logout,
+                    color: (sudahPulang || !sudahMasuk) ? Colors.grey : darkBlue,
+                    size: 22,
+                  ),
                   label: Text(
                     sudahPulang ? "Sudah Absen Pulang ✓" : "Absen Pulang",
                     style: TextStyle(
-                      color: (sudahPulang || !sudahMasuk) ? Colors.grey : Colors.black87,
+                      color: (sudahPulang || !sudahMasuk) ? Colors.grey : darkBlue,
                       fontWeight: FontWeight.bold,
+                      fontSize: 16,
                     ),
                   ),
-                  onPressed: (isLoading || sudahPulang || !sudahMasuk) ? null : () => submitAbsen("Pulang"),
+                  onPressed:
+                      (isLoading || sudahPulang || !sudahMasuk) ? null : () => submitAbsen("Pulang"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
-                    elevation: 0,
+                    elevation: (sudahPulang || !sudahMasuk) ? 0 : 2,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: BorderSide(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: (sudahPulang || !sudahMasuk) ? Colors.grey.shade300 : darkBlue,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
               ),
               if (isLoading) ...[
                 const SizedBox(height: 12),
-                const LinearProgressIndicator(),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: const LinearProgressIndicator(),
+                ),
               ]
             ],
           ),
@@ -532,58 +606,90 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Padding(
-            padding: EdgeInsets.all(12.0),
+            padding: EdgeInsets.fromLTRB(16, 14, 16, 0),
             child: Text("Riwayat Absen",
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
           ),
-          const Divider(height: 1),
+          const Divider(height: 16),
+          // ✅ FIX: Hapus orderBy — sort di client, tidak butuh Firestore index
           StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
             stream: FirebaseFirestore.instance
                 .collection('absensi')
                 .where('uid', isEqualTo: currentUser?.uid)
-                .orderBy('timestamp', descending: true)
-                .limit(10)
+                .limit(20)
                 .snapshots(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData) return const SizedBox(height: 50);
-              if (snapshot.data!.docs.isEmpty) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Center(child: Text("Belum ada riwayat absen.")),
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator()),
                 );
               }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Icon(Icons.history, size: 36, color: Colors.grey),
+                        SizedBox(height: 8),
+                        Text("Belum ada riwayat absen.", style: TextStyle(color: Colors.black54)),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              // Sort terbaru di sisi client
+              var docs = snapshot.data!.docs.toList()
+                ..sort((a, b) {
+                  Timestamp? tA = a.data()['timestamp'] as Timestamp?;
+                  Timestamp? tB = b.data()['timestamp'] as Timestamp?;
+                  if (tA == null || tB == null) return 0;
+                  return tB.compareTo(tA);
+                });
+              // Ambil 10 terbaru setelah sort
+              if (docs.length > 10) docs = docs.sublist(0, 10);
+
               return ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: snapshot.data!.docs.length,
+                itemCount: docs.length,
                 separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (context, index) {
-                  var data = snapshot.data!.docs[index].data();
+                  var data = docs[index].data();
+                  bool isMasuk = data['tipe'] == 'Masuk';
                   return ListTile(
                     dense: true,
-                    leading: Icon(
-                      data['tipe'] == 'Masuk' ? Icons.login : Icons.logout,
-                      color: data['tipe'] == 'Masuk' ? Colors.green : Colors.red,
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: (isMasuk ? Colors.green : Colors.red).withOpacity(0.12),
+                      child: Icon(
+                        isMasuk ? Icons.login : Icons.logout,
+                        color: isMasuk ? Colors.green : Colors.red,
+                        size: 18,
+                      ),
                     ),
-                    title: Text(data['tanggal'],
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
-                    subtitle: Text("Jam: ${data['jam']}"),
+                    title: Text(data['tanggal'] ?? '-',
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    subtitle: Text("Jam: ${data['jam'] ?? '-'}",
+                        style: const TextStyle(fontSize: 12)),
                     trailing: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: data['tipe'] == "Masuk" ? Colors.green : Colors.red,
-                        borderRadius: BorderRadius.circular(4),
+                        color: isMasuk ? Colors.green : Colors.red,
+                        borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        data['tipe'],
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        data['tipe'] ?? '-',
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                       ),
                     ),
                   );
@@ -591,6 +697,7 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
               );
             },
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -598,37 +705,43 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
 
   // ✅ FITUR #6: Banner notifikasi status izin terbaru
   Widget _buildNotifIzin() {
+    // ✅ FIX: Hapus orderBy + whereIn — query sederhana, filter di client
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('izin')
           .where('uid', isEqualTo: currentUser?.uid)
-          .where('status', whereIn: ['approved', 'rejected'])
-          .orderBy('created_at', descending: true)
-          .limit(1)
+          .limit(10)
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return const SizedBox();
 
-        var data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
+        // Cari izin yang sudah diproses dan belum dibaca, ambil terbaru
+        List<QueryDocumentSnapshot> prosedDocs = snapshot.data!.docs.where((doc) {
+          var d = doc.data() as Map<String, dynamic>;
+          String status = d['status'] ?? 'pending';
+          bool sudahDibaca = d['sudah_dibaca'] ?? false;
+          return (status == 'approved' || status == 'rejected') && !sudahDibaca;
+        }).toList();
+
+        if (prosedDocs.isEmpty) return const SizedBox();
+
+        var doc = prosedDocs.first;
+        var data = doc.data() as Map<String, dynamic>;
         String status = data['status'] ?? '';
         String tanggal = data['tanggal'] ?? '';
         String jenis = data['jenis'] ?? 'Izin';
-        bool sudahDibaca = data['sudah_dibaca'] ?? false;
-
-        if (sudahDibaca) return const SizedBox();
 
         bool approved = status == 'approved';
         Color bgColor = approved ? Colors.green.shade50 : Colors.red.shade50;
         Color borderColor = approved ? Colors.green : Colors.red;
         IconData icon = approved ? Icons.check_circle : Icons.cancel;
-        String pesanStatus = approved ? "disetujui" : "ditolak";
+        String pesanStatus = approved ? "disetujui ✓" : "ditolak ✗";
 
         return GestureDetector(
           onTap: () async {
-            // Tandai sudah dibaca
             await FirebaseFirestore.instance
                 .collection('izin')
-                .doc(snapshot.data!.docs.first.id)
+                .doc(doc.id)
                 .update({'sudah_dibaca': true});
           },
           child: Container(
@@ -641,7 +754,7 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
             ),
             child: Row(
               children: [
-                Icon(icon, color: borderColor, size: 24),
+                Icon(icon, color: borderColor, size: 22),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
@@ -650,15 +763,10 @@ class _UserAbsenPageState extends State<UserAbsenPage> {
                       Text(
                         "Pengajuan $jenis Anda $pesanStatus",
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: borderColor,
-                          fontSize: 13,
-                        ),
+                            fontWeight: FontWeight.bold, color: borderColor, fontSize: 13),
                       ),
-                      Text(
-                        "Tanggal: $tanggal  •  Ketuk untuk tutup",
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
-                      ),
+                      Text("Tanggal: $tanggal  •  Ketuk untuk tutup",
+                          style: const TextStyle(fontSize: 11, color: Colors.black54)),
                     ],
                   ),
                 ),
